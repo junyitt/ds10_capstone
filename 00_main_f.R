@@ -25,17 +25,28 @@ ngram.df.f <- function(sdf, k, filter1 = F, stopword = F){
             }) 
       }else{
             df_count[,"pre"] <- df_count[,1]
-            maxword <- as.data.frame(df_count %>% filter(n == max(n)) %>% select(ngram))[1,1]
-            df_count[,"predict"] <- maxword
+            # maxword <- as.data.frame(df_count %>% filter(n == max(n)) %>% select(ngram))[1,1]
+            df_count[,"predict"] <- df_count[,1]
       }
       
       return(df_count)
 }
 
-prep_nlist <- function(sdf, k){
+#quantile_p = 0 means no compression/filter
+prep_nlist <- function(sdf, k, quantile_p = 0.95){
       nlist <- lapply(1:k, FUN = function(x){
             ngram.df.f(sdf, x)
       })
+      
+      quant <- sapply(1:k, FUN = function(x){
+            kdf <- nlist[[x]] %>% summarise(quantile(n, quantile_p))
+            return(as.data.frame(kdf)[1,1] - 1)
+      })
+      
+      nlist <- lapply(1:k, FUN = function(x){
+            nlist[[x]] %>% filter(n > quant[x]) %>% select(n, pre, predict)
+      })
+      
       return(nlist)
 }
 
@@ -58,10 +69,10 @@ reduceword <- function(word1){
       
 }
 
-
-
 p2 <- function(word, nlist, k = 3){
       #length of word must be k-1 = 2
+      word <- paste(as.data.frame(data.frame(text = word, stringsAsFactors = F) %>% unnest_tokens(text2, text))[,1], collapse = " ")
+      
       if(lengthword(word) < k-1){
             k = lengthword(word) + 1
       }else if(lengthword(word) == k-1){
@@ -90,12 +101,9 @@ p2 <- function(word, nlist, k = 3){
                   return( df1  )
             }else{
                   
-                  outdf <- nlist[[1]] %>% mutate(p = 0.4*max(n)/sum(n))
+                  outdf <- nlist[[1]] %>% mutate(p = 0.4*n/sum(n))
                   return( outdf )
             }
             
       }
 }
-
-
-

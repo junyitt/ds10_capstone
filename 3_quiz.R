@@ -25,8 +25,6 @@ word.v3 <- c(word.v1, word.v2)
 
 lapply(word.v3, FUN = function(word){
       
-      # word <- removeWords(word,stopwords)
-      # print(word)
     pred_df <- p2(word, nlist1, k = 3)
     
     return(pred_df)
@@ -37,5 +35,3 @@ lapply(word.v3, FUN = function(word){
 
 
 
-
-# attach("https://github.com/junyitt/abc/abc.Rdata")

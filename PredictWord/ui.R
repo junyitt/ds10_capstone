@@ -1,39 +1,33 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
+#DS 10 - Swiftkey capstone
 
 library(shiny)
+library(shinyjs)
 
-# Define UI for application that draws a histogram
 shinyUI(
       fluidPage(
             titlePanel("Predict next word"),
+
             mainPanel(
-                  
-                  
-                  h3("Predicted next word:"),
-                  fluidRow(
-                        column(3,p("Prediction 1")),
-                        column(3,p("Prediction 2")),
-                        column(3,p("Prediction 3"))
+                  br(),
+                  p("Welcome to my Shiny App!"),
+                  p("This shiny application was inspired by Swiftkey keyboard in both Android and iOS."),
+                  p("As the user types a sentence, 3 buttons above show the predictions of the next word,
+                     where the leftmost word is the most probable word; rightmost word is the 3rd most probable word."),
+                  p("The user may click on either one of the 3 predicted words to fill in the selected predicted word at the end of the sentence."),
+                  br(),
+
+                  useShinyjs(),
+                  div(
+                        id = "loading_page",
+                        h3("Loading... Please wait...")
                   ),
+                  
                   fluidRow(
                         column(3, uiOutput("predictbutton1")  ),
                         column(3, uiOutput("predictbutton2")  ),
                         column(3, uiOutput("predictbutton3")  )
                   ),
-                  actionButton("do", "Click Me"),   
-                  # ntext <- eventReactive(input$action, {
-                  #       # textInput("word1", h3("Write your sentence here:"), "Example", value = ")
-                  # }
-                  # )
-                  textInput("word1", h3("Write your sentence here:"),  value = "Chief Executive"),
-                  uiOutput("text1")
+                  textInput("word1", label = "", placeholder = "Your sentence goes here", width =  "100%")
             )
 
             

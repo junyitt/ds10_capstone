@@ -1,126 +1,59 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
+#DS 10 - Swiftkey capstone
 
 library(shiny)
-
 library(dplyr); library(tidytext); library(tidyr)
 
-ngram.df.f <- function(sdf, k, filter1 = F, stopword = F){
-      
-      if(stopword){
-            stopwords <- as.data.frame(tidytext::stop_words)[,"word"]
-            sdf <- sdf %>% mutate(text = removeWords(text,stopwords))
-      }
-      
-      df <- sdf %>% unnest_tokens(ngram ,text, token = "ngrams", n = k)
-      df_count <- df %>% count(ngram, sort = T)
-      if(filter1){
-            df_count <- df_count %>% filter(n > 1, sort = T)
-      }
-      
-      word.v <- as.data.frame(df_count[,1])[,1]
-      word.list <- strsplit(word.v, " ")
-      if(k > 1){
-            df_count[,"pre"] <- sapply(word.list, FUN = function(x){
-                  return(paste(x[1:(k-1)], collapse = " "))
-            })
-            df_count[,"predict"] <- sapply(word.list, FUN = function(x){
-                  return(x[k])
-            }) 
-      }else{
-            df_count[,"pre"] <- df_count[,1]
-            maxword <- as.data.frame(df_count %>% filter(n == max(n)) %>% select(ngram))[1,1]
-            df_count[,"predict"] <- maxword
-      }
-      
-      return(df_count)
-}
-prep_nlist <- function(sdf, k){
-      nlist <- lapply(1:k, FUN = function(x){
-            ngram.df.f(sdf, x)
-      })
-      return(nlist)
-}
-lengthword <- function(word1){
-      x <- strsplit(word1, " ")[[1]]
-      L <- length(x)
-      return(L)
-}
-reduceword <- function(word1){
-      
-      x <- strsplit(word1, " ")[[1]]
-      L <- length(x)
-      if(L > 1){
-            return( paste(x[2:L], collapse = " ") )
-      }else{
-            return(word1)
-      }
-      
-}
-p2 <- function(word, nlist, k = 3){
-      #length of word must be k-1 = 2
-      word <- paste(as.data.frame(data.frame(text = word, stringsAsFactors = F) %>% unnest_tokens(text2, text))[,1], collapse = " ")
-      
-      if(lengthword(word) < k-1){
-            k = lengthword(word) + 1
-      }else if(lengthword(word) == k-1){
-            #perfect
-      }else{
-            while(lengthword(word) > k-1){
-                  word <- reduceword(word)
-            }
-      }
-      
-      count <- as.data.frame(nlist[[k]] %>% filter(pre == word) %>% summarise(sum(n)))[1,1]
-      
-      if(count > 0){
-            if(k-1 == 1){
-                  
-                  NN <- as.data.frame(  nlist[[k-1]] %>% filter(pre == word) %>% select(n)   )[1,1]
-            }else{
-                  NN <- as.data.frame(  nlist[[k-1]] %>% filter(paste(pre,predict) == word) %>% select(n)   )[1,1]
-            }
-            outdf <- nlist[[k]] %>% filter(pre == word) %>% mutate(p = n/NN)
-            return(outdf)
-      }else{
-            if(k>2){
-                  df1 <- p2(reduceword(word), nlist, k-1) 
-                  df1[,"p"] <- 0.4*df1[,"p"] 
-                  return( df1  )
-            }else{
-                  
-                  outdf <- nlist[[1]] %>% mutate(p = 0.4*max(n)/sum(n))
-                  return( outdf )
-            }
-            
-      }
-}
 
-setwd("C:/Users/User/Desktop/DS 10 - Capstone/")
-load("15mb.Rdata")
+
+con <- file("https://raw.githubusercontent.com/junyitt/ds10_capstone/master/00_main_f.R")
+source(con)
+close(con)
+
+
+
+
+
+#load the Rdata that contains the ngram calculated before
+load_data <- function(){
+      con <- file("https://github.com/junyitt/ds10_capstone/raw/master/15mb.Rdata")
+      load(con, envir = .GlobalEnv)
+      close(con)
+      
+      hide("loading_page")
+}
 
 
 
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
       
-      observeEvent(input$do, {
-             word32 <<- paste(input$text1, "asd")
-            # input$word1 <- paste(input$word1, "asdasd")
+      load_data()
+      
+      observeEvent(input$action1, {
+            updateTextInput( session, 'word1', value=paste(trimws(input$word1, "right"), predict()[1]) )
+      })
+      
+      observeEvent(input$action2, {
+            updateTextInput( session, 'word1', value=paste(trimws(input$word1, "right"), predict()[2]) )
+      })
+      
+      observeEvent(input$action3, {
+            updateTextInput( session, 'word1', value=paste(trimws(input$word1, "right"), predict()[3]) )
       })
       
       predict <- reactive({
             word <- input$word1
             pred_df <- p2(word, nlist1, k = 3)
-            predict <- as.data.frame(pred_df[,"predict"])[1:nrow(pred_df),1]
-            predict
+            predict1 <- as.data.frame(pred_df[,"predict"])[1:nrow(pred_df),1]
+            
+            if(is.na(predict1[2])){
+                  predict1[2] <- "the"
+            }
+            if(is.na(predict1[3])){
+                  predict1[3] <- "the"
+            }
+            predict1
       })
       
             output$predicttext1 <- renderText({ 
@@ -128,12 +61,11 @@ shinyServer(function(input, output) {
             })
             
             output$predicttext2 <- renderText({ 
-                  predict()[2]
+                        predict()[2]
             })
             
             output$predicttext3 <- renderText({ 
-                  predict()[3]
-            
+                        predict()[3]
             }) 
             
             output$predictbutton1 <- renderUI({
@@ -147,7 +79,7 @@ shinyServer(function(input, output) {
             })
             
            
-            output$text1 <- renderUI({
-                  textInput("text12", h3("Write your sentence here2:"), placeholder = "Your sentence", value = word32)
-            })
+            # output$text1 <- renderUI({
+            #       textInput("text12", h3("Write your sentence here2:"), placeholder = "Your sentence", value = "")
+            # })
 })
