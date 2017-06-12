@@ -41,9 +41,10 @@ prep_nlist <- function(sdf, k){
       return(nlist)
 }
 
-compress_nlist_f <- function(nlist, quantile_p = 0.95){
-      
-      k <- length(nlist)
+compress_nlist_f <- function(nlist, k = NULL, quantile_p = 0.95){
+      if(is.null(k)){
+            k <- length(nlist)
+      }
       
       quant <- sapply(1:k, FUN = function(x){
             kdf <- nlist[[x]] %>% summarise(quantile(n, quantile_p))

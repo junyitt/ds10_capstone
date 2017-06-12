@@ -31,7 +31,7 @@ close(con)
 
 
 nlist <- prep_nlist(sdf, k = 4)
-nlist1 <- compress_nlist_f(nlist, 0.9)
+nlist1 <- compress_nlist_f(nlist, k = 4, 0.9)
 
 setwd("C:/Users/User/git/ds10_capstone_git")
 save(nlist1, file =  "nlist1.Rdata")
