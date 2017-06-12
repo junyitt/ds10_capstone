@@ -33,10 +33,17 @@ ngram.df.f <- function(sdf, k, filter1 = F, stopword = F){
 }
 
 #quantile_p = 0 means no compression/filter
-prep_nlist <- function(sdf, k, quantile_p = 0.95){
+prep_nlist <- function(sdf, k){
       nlist <- lapply(1:k, FUN = function(x){
             ngram.df.f(sdf, x)
       })
+   
+      return(nlist)
+}
+
+compress_nlist_f <- function(nlist, quantile_p = 0.95){
+      
+      k <- length(nlist)
       
       quant <- sapply(1:k, FUN = function(x){
             kdf <- nlist[[x]] %>% summarise(quantile(n, quantile_p))
@@ -48,6 +55,7 @@ prep_nlist <- function(sdf, k, quantile_p = 0.95){
       })
       
       return(nlist)
+      
 }
 
 
