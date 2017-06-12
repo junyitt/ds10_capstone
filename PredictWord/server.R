@@ -15,7 +15,7 @@ close(con)
 
 #load the Rdata that contains the ngram calculated before
 load_data <- function(){
-      con <- file("https://github.com/junyitt/ds10_capstone/raw/master/15mb.Rdata")
+      con <- file("https://github.com/junyitt/ds10_capstone/raw/master/nlist1.Rdata")
       load(con, envir = .GlobalEnv)
       close(con)
       
