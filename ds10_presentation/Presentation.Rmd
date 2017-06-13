@@ -1,0 +1,42 @@
+---
+title: 'Next Word Prediction: Model and Implementation'
+author: "Jun Yitt, Cheah"
+date: "June 12, 2017"
+output: ioslides_presentation
+---
+
+## Overview
+
+This presentation, together with the shiny app were developed for the Coursera Data Science Capstone.
+
+The shiny app can be found here:
+<https://jycheah.shinyapps.io/PredictWord/>
+
+The R code for this project can be found here:
+<https://github.com/junyitt/ds10_capstone>
+
+
+## Problem
+- Given: 3 English datasets: en_US.blogs.txt, en_US.news.txt & en_US.twitter.txt
+- Problem: Predict the next word of a given sentence
+- Approach: Create n-grams for n = 1 to 3, and predict the next word based on stupid-backoff model
+
+
+## Predictive Performance
+- Based on 1000 test samples, the prediction accuracy of this model is about 6.9% if only 1 prediction is taken to verify with the test data outcome.
+- However, by providing 3 predictions of possible next word of a sentence (just like how Swiftkey did), the prediction accuracy of the model increases to 10.5%.
+- This performance is justifiable as there is a need to trade-off between the size of the model and its accuracy.
+- The size of this model is approximately 4MB, hence it quickens the loading time of the Shiny App.
+
+
+## Shiny App
+  
+  - The final Shiny App resembles the output of the Swiftkey keyboard. As the user types a sentence, 3 predictions of the possible next word will be displayed. 
+  - The user has the convenience to click on one of the 3 predictions to fill in the sentence.
+  
+  ![](demo3.png)
+  
+  
+
+
+

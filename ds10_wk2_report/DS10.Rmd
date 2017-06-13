@@ -1,0 +1,156 @@
+---
+title: "Milestone Report"
+author: "Jun Yitt Cheah"
+date: "June 4, 2017"
+output: html_document
+---
+
+#Summary
+This report aims to explore the 3 English datasets provided. The datasets are large and require long computational time to analyze using conventional personal computers. Smaller sample of the datasets are subsetted for exploratory data analysis.  
+Histogram of frequently used words in the datasets is plotted. Bigrams are created to tabulate the frequency of unique token of 2 consecutive words. Links between the first word and the 2nd word of frequently observed bigrams are plotted as well for visualization purpose.  
+We come to a conclusion to create trigrams or even higher order n-grams to consider for more specific possibilities and possible increase in accuracy of prediction made. Stupid Backoff Model will be used for simplicity sake, and ultimately a Shiny App will be created and it shall predict the next word as the user is typing a sentence.
+
+
+## Reading the Data 
+```{r, cache = T, warning=F}
+setwd("~/Desktop/DS 10 - Capstone/Coursera-SwiftKey/final/en_US")
+
+con <- file("en_US.twitter.txt", "r"); 
+us_twitter <- readLines(con); close(con)
+con2 <- file("en_US.news.txt", "r"); 
+us_news <- readLines(con2); close(con2)
+con3 <- file("en_US.blogs.txt", "r"); 
+us_blogs <- readLines(con3); close(con3)
+
+```
+
+## Loading relevant R packages
+```{r, warning = F, message = F}
+library(dplyr); library(tidytext); library(ggplot2); library(tidyr)
+library(igraph); library(ggraph)
+```
+
+## Understanding the Structure of the Data
+```{r, cache = T, comment=""}
+summary(us_twitter)
+summary(us_news)
+summary(us_blogs)
+summary(nchar(us_twitter))
+summary(nchar(us_news))
+summary(nchar(us_blogs))
+```
+We observed that there are 2,360,148 lines of data from the Twitter dataset, and generally tweets have shorter number of words (mostly between 60 to 70); while there are 1,010,242 and 899,288 lines of data from the News and Blogs dataset, which generally have greater number of words per entry (about 150 to 200 words per entry).
+
+## Sampling the Data
+As a start, we sample 100,000 lines of data from the 3 datasets each for exploratory data analysis.
+
+```{r, cache = T}
+
+set.seed(122)
+subset1 <- sample(1:length(us_twitter))[1:100000] 
+subset2 <- sample(1:length(us_news))[1:100000] 
+subset3 <- sample(1:length(us_blogs))[1:100000] 
+
+twitter_sdf <- data_frame(line = subset1, text = us_twitter[subset1], dataType = "twitter") #sample twitter df
+news_sdf <- data_frame(line = subset2, text = us_news[subset2], dataType = "news") #sample news df
+blogs_sdf <- data_frame(line = subset3, text = us_blogs[subset3], dataType = "blogs") #sample blogs df
+
+sdf <- rbind(twitter_sdf, news_sdf, blogs_sdf)
+```
+
+
+## Tokenization (Creating a Unigram)
+First, we tokenize each row/line by breaking the text into individual token (in this case, 1 word). The *tidytext* library is used to transform the original data to a tidy text dataframe. Punctuations are removed, and all tokens are converted to lower case for easy comparison or combinations between datasets.
+
+```{r, cache = T}
+tidy_df1 <- sdf %>% unnest_tokens(word, text)
+print(tidy_df1)
+
+```
+
+### Counting the Frequency of each Unique Word
+Next, we create a unigram, where each token's frequency will be calculated and tabulated. Currently, we treat the 3 datasets as independent, and calculate frequency of token separately for each dataset (twitter/blogs/news). Stop words (such as "the","of", "to") are removed as they are not useful for the text analysis we are doing. List of stop words we will be exluding will be extracted from *stop_words* in the *tidytext* dataset.
+
+```{r, cache = T}
+count_df <- tidy_df1 %>% anti_join(stop_words) %>% group_by(dataType) %>% count(word, sort = T)
+print(count_df)
+```
+
+### Plot of Frequently Used Words
+```{r, cache = T}
+cplot_df <- count_df %>% filter(n > 2500) %>% mutate(word = reorder(word, n)) 
+ggplot(cplot_df, aes(word, n, fill = dataType)) + geom_col() + coord_flip() + facet_wrap(~dataType)
+
+```
+
+
+### Interesting Finding 1
+We observed that only Twitter has words like "rt" and "lol". We know that "lol" is usually used informally, and hence we would expect no occurence of such word in the News and Blogs datasets. We now need to investigate what is the meaning of "rt".
+
+```{r, cache = T}
+tidy_df1 %>% filter(word == "rt")
+twitter_sdf %>% filter(line %in% c(84419, 66080, 940724)) %>% select(text)
+```
+
+So, we subset a few lines of tweets with "rt" in it and we observed they are mostly capitalized. (I personally did not use Twitter, FB is enough to steal all my productivity away!) After some googling, I found out that RT means "Retweet" or "Real Time". So, it makes sense, that "rt" appears frequently in the Twitter dataset.
+
+
+## Creating Bigrams
+Words in a sentence tend to have dependencies between each other. A n-grams consider n consecutive words as 1 token and tabulate the frequency of each unique token. A bigram, where n = 2, will consider the frequency of 2 consecutive words in the text dataset.
+
+```{r, cache = T}
+bigram_df <- sdf %>% unnest_tokens(bigram ,text, token = "ngrams", n = 2)
+print(bigram_df)
+```
+
+### Counting the Frequency of each Unique Bigram
+```{r, cache = T}
+count_bigram_df <- bigram_df %>% count(bigram, sort = T)
+print(count_bigram_df)
+```
+
+### Visualizing Dependencies of *word1* and *word2* of Bigrams
+We start by separating the bigram into *word1* and *word2*. After removing the stop words, we filter out only the top few most frequent bigram and visualize it using a function provided by *Julia Silge and David Robinson* and the R package *ggraph*.
+
+```{r, cache = T}
+sep_df <- bigram_df %>% separate(bigram, c("word1", "word2"), sep = " ")
+bigram_filtered <- sep_df %>%
+    filter(!word1 %in% stop_words$word) %>%
+    filter(!word2 %in% stop_words$word)
+bigram_count <- bigram_filtered %>% count(word1, word2, sort = T)
+bigram_graph <- bigram_count %>% filter(n > 200) 
+
+print(bigram_graph)
+
+```
+
+```{r, cache = F}
+visualize_bigrams <- function(bigrams) {
+    set.seed(2000)
+    a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+    
+    bigrams %>%
+        graph_from_data_frame() %>%
+        ggraph(layout = "fr") +
+        geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, arrow = a) +
+        geom_node_point(color = "lightblue", size = 5) +
+        geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+        theme_void()
+}
+
+bigram_graph %>% visualize_bigrams()
+
+```
+
+### Interesting Finding 2
+We observed a few very obvious bigrams which have very high frequency from the plot above. For example, "ice cream", "happy birthday", "vice president" and others.
+We also noticed the need to create trigrams (n = 3) and higher order n-grams, to take into consideration of words such as "chief executive director" and "york city council" which could stands for "new york city council".
+
+
+## Plans for Creating a Prediction Algorithm and Shiny App
+The next step is to create a prediction algorithm based on Stupid Backoff Model, as Kantz Backoff Model is slightly more difficult to code than Stupid Backoff Model. Trigram will be created and added for better accuracy.  
+Ultimately, the Shiny App shall predict the next word as the user types a sentence. 
+
+
+
+

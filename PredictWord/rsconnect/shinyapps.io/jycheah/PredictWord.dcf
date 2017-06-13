@@ -3,8 +3,8 @@ title: PredictWord
 account: jycheah
 server: shinyapps.io
 appId: 188205
-bundleId: 862740
+bundleId: 863080
 url: https://jycheah.shinyapps.io/PredictWord/
-when: 1497246543.91303
+when: 1497266531.00794
 asMultiple: FALSE
 asStatic: FALSE

@@ -22,6 +22,17 @@ blogs_sdf <- data_frame(line = subset3, text = us_blogs[subset3], dataType = "bl
 
 sdf <- rbind(twitter_sdf, news_sdf, blogs_sdf)
 
+sub2 = 100001:200000
+set.seed(101)
+subset1 <- sample(1:length(us_twitter))[sub2] 
+subset2 <- sample(1:length(us_news))[sub2] 
+subset3 <- sample(1:length(us_blogs))[sub2] 
+twitter_sdf <- data_frame(line = subset1, text = us_twitter[subset1], dataType = "twitter") #sample twitter df
+news_sdf <- data_frame(line = subset2, text = us_news[subset2], dataType = "news") #sample news df
+blogs_sdf <- data_frame(line = subset3, text = us_blogs[subset3], dataType = "blogs") #sample blogs df
+
+testsdf <- rbind(twitter_sdf, news_sdf, blogs_sdf)
+
 setwd("C:/Users/User/Desktop/DS 10 - Capstone/")
 
 
@@ -30,8 +41,9 @@ source(con)
 close(con)
 
 
-nlist <- prep_nlist(sdf, k = 4)
-nlist1 <- compress_nlist_f(nlist, k = 4, 0.9)
+nlist <- prep_nlist(sdf, k = 3)
+nlist1 <- compress_nlist_f(nlist, k = 3, 0.90)
+
 
 setwd("C:/Users/User/git/ds10_capstone_git")
 save(nlist1, file =  "nlist1.Rdata")

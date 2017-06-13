@@ -5,7 +5,9 @@ library(shinyjs)
 
 shinyUI(
       fluidPage(
-            titlePanel("Predict next word"),
+            h2("Shiny App: Predict Next Word"),
+            p("by Jun Yitt, Cheah"),
+            p("June 12, 2017"),
 
             mainPanel(
                   br(),
